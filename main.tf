@@ -77,9 +77,9 @@ resource "aws_lb" "default" {
   }
 }
 
-module "default_target_group_label" {
+module "http_target_group_label" {
   source     = "git::https://github.com/cloudposse/terraform-terraform-label.git?ref=tags/0.1.6"
-  attributes = "${concat(var.attributes, list("default"))}"
+  attributes = "${concat(var.attributes, list("http"))}"
   delimiter  = "${var.delimiter}"
   name       = "${var.name}"
   namespace  = "${var.namespace}"
@@ -87,12 +87,12 @@ module "default_target_group_label" {
   tags       = "${var.tags}"
 }
 
-resource "aws_lb_target_group" "default" {
-  name                 = "${module.default_target_group_label.id}"
+resource "aws_lb_target_group" "http" {
+  name                 = "${module.http_target_group_label.id}"
   port                 = "80"
   protocol             = "HTTP"
   vpc_id               = "${var.vpc_id}"
-  target_type          = "ip"
+  target_type          = "${var.target_type}"
   deregistration_delay = "${var.deregistration_delay}"
 
   health_check {
@@ -116,10 +116,43 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = "${aws_lb_target_group.default.arn}"
+    target_group_arn = "${aws_lb_target_group.http.arn}"
     type             = "forward"
   }
 }
+
+module "https_target_group_label" {
+  source     = "git::https://github.com/cloudposse/terraform-terraform-label.git?ref=tags/0.1.6"
+  attributes = "${concat(var.attributes, list("https"))}"
+  delimiter  = "${var.delimiter}"
+  name       = "${var.name}"
+  namespace  = "${var.namespace}"
+  stage      = "${var.stage}"
+  tags       = "${var.tags}"
+}
+
+resource "aws_lb_target_group" "https" {
+  name                 = "${module.https_target_group_label.id}"
+  port                 = "443"
+  protocol             = "HTTPS"
+  vpc_id               = "${var.vpc_id}"
+  target_type          = "${var.target_type}"
+  deregistration_delay = "${var.deregistration_delay}"
+
+  health_check {
+    path                = "${var.health_check_path}"
+    timeout             = "${var.health_check_timeout}"
+    healthy_threshold   = "${var.health_check_healthy_threshold}"
+    unhealthy_threshold = "${var.health_check_unhealthy_threshold}"
+    interval            = "${var.health_check_interval}"
+    matcher             = "${var.health_check_matcher}"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 
 resource "aws_lb_listener" "https" {
   count             = "${var.https_enabled == "true" ? 1 : 0}"
@@ -131,7 +164,7 @@ resource "aws_lb_listener" "https" {
   certificate_arn = "${var.certificate_arn}"
 
   default_action {
-    target_group_arn = "${aws_lb_target_group.default.arn}"
+    target_group_arn = "${aws_lb_target_group.https.arn}"
     type             = "forward"
   }
 }

@@ -29,8 +29,18 @@ output "security_group_id" {
 }
 
 output "default_target_group_arn" {
-  description = "The default target group ARN"
-  value       = "${aws_lb_target_group.default.arn}"
+  description = "The default target group ARN (http)"
+  value       = "${aws_lb_target_group.http.arn}"
+}
+
+output "http_target_group_arn" {
+  description = "The default target group ARN (http)"
+  value       = "${aws_lb_target_group.http.arn}"
+}
+
+output "https_target_group_arn" {
+  description = "The default target group ARN (https)"
+  value       = "${aws_lb_target_group.https.arn}"
 }
 
 output "http_listener_arn" {
